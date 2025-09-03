@@ -5,7 +5,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/<your-username>/<your-repo>.git'
+                git branch: 'master', url: ''https://github.com/mafid456/big-o-performance-java.git
                 
                 // Setup Node.js tool after checkout
                 script {

@@ -1,14 +1,17 @@
+
 pipeline {
     agent any
-
-    tools {
-        nodejs "nodejs"   // Make sure Jenkins has NodeJS installed & configured with this name
-    }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/mafid456/big-o-performance-java.git'
+                git branch: 'main', url: 'https://github.com/<your-username>/<your-repo>.git'
+                
+                // Setup Node.js tool after checkout
+                script {
+                    def nodeHome = tool name: 'nodejs', type: 'NodeJSInstallation'
+                    env.PATH = "${nodeHome}/bin:${env.PATH}"
+                }
             }
         }
 
@@ -49,4 +52,3 @@ pipeline {
         }
     }
 }
-

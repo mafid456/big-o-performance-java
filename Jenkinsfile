@@ -1,5 +1,10 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18'  // Run inside official Node.js Docker image
+            args '-v $HOME/.npm:/root/.npm' // cache npm dependencies
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -10,19 +15,25 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                timeout(time: 5, unit: 'MINUTES') {
+                    sh 'npm ci'  // Faster & reproducible than "npm install"
+                }
             }
         }
 
         stage('Build') {
             steps {
-                sh 'npm run build'
+                timeout(time: 5, unit: 'MINUTES') {
+                    sh 'npm run build'
+                }
             }
         }
 
         stage('Test') {
             steps {
-                sh 'npm test || echo "No tests defined"'
+                timeout(time: 5, unit: 'MINUTES') {
+                    sh 'npm test || echo "No tests defined"'
+                }
             }
         }
 
@@ -30,6 +41,13 @@ pipeline {
             steps {
                 archiveArtifacts artifacts: 'dist/**', fingerprint: true
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs() // clears workspace after build
         }
     }
 }

@@ -26,7 +26,6 @@ pipeline {
         stage('Stop Old Container') {
             steps {
                 script {
-                    // Stop and remove old container if running
                     sh """
                         if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
                             echo "Stopping old container..."
@@ -34,7 +33,7 @@ pipeline {
                             docker rm ${CONTAINER_NAME} || true
                         fi
 
-                        // Free port if any container is bound to HOST_PORT
+                        # Free port if any container is bound to HOST_PORT
                         RUNNING_CONTAINER=\$(docker ps -q --filter "publish=${HOST_PORT}")
                         if [ -n "\$RUNNING_CONTAINER" ]; then
                             echo "Port ${HOST_PORT} is in use by another container. Stopping it..."
@@ -42,9 +41,10 @@ pipeline {
                             docker rm \$RUNNING_CONTAINER || true
                         fi
                     """
-                }
-            }
         }
+    }
+}
+
 
         stage('Run New Container') {
             steps {

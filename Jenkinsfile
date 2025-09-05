@@ -2,49 +2,49 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "big-o-performance"
-        IMAGE_TAG  = "latest"
-        NPM_CONFIG_CACHE = "${WORKSPACE}/.npm"
+        IMAGE_NAME = "myapp"
+        CONTAINER_NAME = "myapp-container"
+        HOST_PORT = "8080"   // change this if you want
+        CONTAINER_PORT = "80"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/mafid456/big-o-performance-java.git'
+                checkout scm
             }
         }
 
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm ci'
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build'
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'No tests defined in package.json, skipping test stage.'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-            }
-        }
-
-        stage('Run Container') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Stop old container if running
+                    sh "docker build -t ${IMAGE_NAME}:latest ."
+                }
+            }
+        }
+
+        stage('Stop Old Container') {
+            steps {
+                script {
+                    // Stop and remove old container if running
                     sh """
-                        docker ps -q --filter "name=${IMAGE_NAME}" | grep -q . && docker stop ${IMAGE_NAME} && docker rm ${IMAGE_NAME} || true
-                        docker run -d --name ${IMAGE_NAME} -p 3000:3000 ${IMAGE_NAME}:${IMAGE_TAG}
+                        if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
+                            docker stop ${CONTAINER_NAME}
+                            docker rm ${CONTAINER_NAME}
+                        fi
+                    """
+                }
+            }
+        }
+
+        stage('Run New Container') {
+            steps {
+                script {
+                    sh """
+                        docker run -d \
+                        --name ${CONTAINER_NAME} \
+                        -p ${HOST_PORT}:${CONTAINER_PORT} \
+                        ${IMAGE_NAME}:latest
                     """
                 }
             }
@@ -52,9 +52,11 @@ pipeline {
     }
 
     post {
-        always {
-            echo 'Cleaning up workspace...'
-            cleanWs()
+        success {
+            echo "🚀 App deployed successfully at http://<EC2-Public-IP>:${HOST_PORT}"
+        }
+        failure {
+            echo "❌ Deployment failed. Check Jenkins logs."
         }
     }
 }

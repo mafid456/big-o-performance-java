@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         CONTAINER_NAME = "myapp-container"
-        HOST_PORT = "8080"      // change this if already in use
+        HOST_PORT = "9090"      // changed from 8080 → 9090
         CONTAINER_PORT = "80"
     }
 

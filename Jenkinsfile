@@ -4,7 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "myapp"
         CONTAINER_NAME = "myapp-container"
-        HOST_PORT = "8080"   // change this if you want
+        HOST_PORT = "8080"      // change this if already in use
         CONTAINER_PORT = "80"
     }
 
@@ -29,8 +29,17 @@ pipeline {
                     // Stop and remove old container if running
                     sh """
                         if [ \$(docker ps -q -f name=${CONTAINER_NAME}) ]; then
-                            docker stop ${CONTAINER_NAME}
-                            docker rm ${CONTAINER_NAME}
+                            echo "Stopping old container..."
+                            docker stop ${CONTAINER_NAME} || true
+                            docker rm ${CONTAINER_NAME} || true
+                        fi
+
+                        // Free port if any container is bound to HOST_PORT
+                        RUNNING_CONTAINER=\$(docker ps -q --filter "publish=${HOST_PORT}")
+                        if [ -n "\$RUNNING_CONTAINER" ]; then
+                            echo "Port ${HOST_PORT} is in use by another container. Stopping it..."
+                            docker stop \$RUNNING_CONTAINER || true
+                            docker rm \$RUNNING_CONTAINER || true
                         fi
                     """
                 }
